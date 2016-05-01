@@ -17,125 +17,107 @@
    @url            https://github.com/alessandro1105
 */
 
+
 #include "Jack.h"
 
-//JDATA WRAPPER
 
-JDataWrapper::JDataWrapper(JData * value) { //construttore/incapsulatore
-
-	this->value = value;
-
+//---JDATA WRAPPER---
+JDataWrapper::JDataWrapper(JData *value) { //construttore/incapsulatore
+	_value = value;
 }
 
-JData * JDataWrapper::getJData() { //restituisce il valore memorizzato
-
-	return value;
-
+JData *JDataWrapper::getJData() { //restituisce il valore memorizzato
+	return _value;
 }
 
-int JDataWrapper::type() { //zrestituisco il tipo di wrapper
-
-	return Wrapper::JDATA;
-
+uint8_t JDataWrapper::type() { //zrestituisco il tipo di wrapper
+	return WR_JDATA;
 }
 
 
-//JDATA
-
+//---JDATA---
 JData::JData() { //costruttore
 	
-	data = new HashMap<String, Wrapper *>();
+	//costruisco i contenitori dei dati
+	_data = new HashMap<String, Wrapper *>();
+	_indexes = new HashMap<int, String>();
 	
-	indexes = new HashMap<int, String>();
-	
-	size = 0;
+	//azzero il numero di elementi memorizzati
+	_size = 0;
 	
 }
 
 JData::~JData() { //distruttore
 	
-	//Serial.println("JDATA destructing...");
-	
-	//Serial.println("elimino data...");
-	if (data->moveToFirst()) { //elimino tutte le classi wrapper
+	//elimino tutti gli elementi contenuti
+	if (_data->moveToFirst()) {
 		
 		do {
-			
-			Wrapper * wrapper= data->getValue();
+			Wrapper *wrapper = _data->value();
 			
 			switch (wrapper->type()) {
 		
-				case Wrapper::LONG:
+				case WR_LONG:
 					delete static_cast<LongWrapper *>(wrapper);
 					break;
 					
-				case Wrapper::DOUBLE:
+				case WR_DOUBLE:
 					delete static_cast<DoubleWrapper *>(wrapper);
 					break;
 				
-				case Wrapper::BOOLEAN:
+				case WR_BOOLEAN:
 					delete static_cast<BooleanWrapper *>(wrapper);
 					break;
 					
-				case Wrapper::STRING:
+				case WR_STRING:
 					delete static_cast<StringWrapper *>(wrapper);
 					break;
 					
-				case Wrapper::JDATA:
+				case WR_JDATA:
 					delete static_cast<JDataWrapper *>(wrapper);
 					break;
 			
 	
 			}
-			
-			
-			//delete data->getValue();
 		
-		} while (data->moveToNext());
+		} while (_data->moveToNext());
 		
 	}	
-	delete data; //elimino la struttura contenuta in HashMap
-	
-	//Serial.println("elimino indexes...");
-	delete indexes; //elimino la struttura contenuta in HashMap
-	
-	//Serial.println("JDATA destruct");
-	
+
+	//elimino i due contenitori
+	delete _data; //elimino la struttura contenuta in HashMap
+	delete _indexes; //elimino la struttura contenuta in HashMap
 }
 
 //add wrapper
 void JData::addWrapper(String key, Wrapper * wrapper) {
-		
-	data->put(key, wrapper);
 	
-	indexes->put(size, key);
+	//inserisco il wrapper
+	_data->put(key, wrapper);
+
+	//inserisco l'indice
+	_indexes->put(_size, key);
 	
-	size++;
+	//incremento la dimensione
+	_size++;
 	
 };
 
 //get wrapper
 Wrapper * JData::getWrapper(String key) {
-	
-	return data->getValue(key);
-
+	return _data->valueFor(key);
 }
+
 Wrapper * JData::getWrapper(int index) {
-	
 	return getWrapper(getKey(index));
-	
 }
 		
 int JData::getWrapperType(String key) {
-	
 	return getWrapper(key)->type();
-	
 }
 
 int JData::getWrapperType(int index) {
-	
 	return getWrapperType(getKey(index));
-	
 }
 
 //adder
@@ -167,9 +149,6 @@ void JData::addString(String key, String value) {
 	StringWrapper * wrapper = new StringWrapper(value);
 	
 	addWrapper(key, wrapper);
-
-	
-	//delete wrapper;
 }
 
 void JData::addJData(String key, JData * value) {
@@ -231,34 +210,32 @@ JData * JData::getJData(int index) {
 		
 //get key
 String JData::getKey(int index) {
-
-	return this->indexes->getValue(index);
-
+	return _indexes->valueAt(index);
 }
 		
 //get type stored
-int JData::getType(String key) {
+JDType JData::getType(String key) {
 	
 	switch (getWrapperType(key)) {
 		
-		case Wrapper::LONG:
-			return LONG;
+		case WR_LONG:
+			return JD_LONG;
 			break;
 			
-		case Wrapper::DOUBLE:
-			return DOUBLE;
+		case WR_DOUBLE:
+			return JD_DOUBLE;
 			break;
 		
-		case Wrapper::BOOLEAN:
-			return BOOLEAN;
+		case WR_BOOLEAN:
+			return JD_BOOLEAN;
 			break;
 			
-		case Wrapper::STRING:
-			return STRING;
+		case WR_STRING:
+			return JD_STRING;
 			break;
 			
-		case Wrapper::JDATA:
-			return JDATA;
+		case WR_JDATA:
+			return JD_JDATA;
 			break;
 			
 	
@@ -266,510 +243,472 @@ int JData::getType(String key) {
 
 }
 
-int JData::getType(int index) {
-
+JDType JData::getType(int index) {
 	return getType(getKey(index));
-
-
 }
 		
 //get size
 int JData::length() {
-	
-	return size;
+	return _size;
 }
 
 
 int JData::containsKey(String key) {
-	
-	return data->containsKey(key);
-	
-}
-
-		
-//JACK
-
-String Jack::MESSAGE_TYPE = "message_type"; //key tipo messaggio
-String Jack::MESSAGE_DATA = "message_data"; //messaggio dati
-		
-String Jack::MESSAGE_ID = "id"; //id messaggio
-		
-String Jack::MESSAGE_TYPE_ACK = "ack"; //tipo ack
-String Jack::MESSAGE_TYPE_DATA = "values"; //tipo dati
-		
-String Jack::MESSAGE_BOOLEAN_TRUE = "t"; //simbolo invio boolean true
-String Jack::MESSAGE_BOOLEAN_FALSE = "f";//simbolo invio boolean falso
-		
-Jack::Jack(JTrasmissionMethod * mmJTM, void (* onReceive) (JData *), void (* onReceiveAck) (JData *), long (* getTimestamp) ()) { //costruttore con mmJTM e funzione onRceive e OnReceiveAck
-	
-	//valori di default
-	TIME_BEFORE_RESEND = 1000; //tempo reinvio ms
-	
-	SEND_ONE_TIME = 0; //inviare i pacchetti una volta sola
-	
-	stopPolling = 1;
-	
-	this->mmJTM = mmJTM;
-	
-	//creo buffer
-	
-	sendMessageBuffer = new HashMap<long, String>();
-	sendMessageTimer = new HashMap<long, long>();
-	sendMessageBufferJData = new HashMap<long, JData *>();
-	sendAckBuffer = new HashMap<long, String>();
-	
-	idMessageReceived = new HashMap<long, long>();
-	
-	
-	//imposto le funzioni
-	
-	this->onReceive = onReceive;
-	
-	this->onReceiveAck = onReceiveAck;
-	
-	this->getTimestamp = getTimestamp;
-	
-}
-
-Jack::Jack(JTrasmissionMethod * mmJTM, void (* onReceive) (JData *), void (* onReceiveAck) (JData *), long (* getTimestamp) (), long timeBeforeResend) { //tempo per il reinvio
-	
-	
-	//valori di default
-	TIME_BEFORE_RESEND = timeBeforeResend; //tempo reinvio ms
-	
-	SEND_ONE_TIME = 0; //inviare i pacchetti una volta sola
-	
-	stopPolling = 1;
-	
-	this->mmJTM = mmJTM;
-	
-	//creo buffer
-	
-	sendMessageBuffer = new HashMap<long, String>();
-	sendMessageTimer = new HashMap<long, long>();
-	sendMessageBufferJData = new HashMap<long, JData *>();
-	sendAckBuffer = new HashMap<long, String>();
-	
-	idMessageReceived = new HashMap<long, long>();
-	
-	
-	//imposto le funzioni
-	
-	this->onReceive = onReceive;
-	
-	this->onReceiveAck = onReceiveAck;
-	
-	this->getTimestamp = getTimestamp;
-	
-}
-/*
-Jack::Jack(JTrasmissionMethod * mmJTM, void (* onReceive) (JData *), void (* onReceiveAck) (JData *), long (* getTimestamp) (), int sendOneTime) { //indica se effettuare il reinvio dei mex se non confermati
-	
-	//valori di default
-	TIME_BEFORE_RESEND = 1000; //tempo reinvio ms
-	
-	SEND_ONE_TIME = sendOneTime;
-	
-	stopPolling = 1;
-	
-	this->mmJTM = mmJTM;
-	
-	//creo buffer
-	
-	sendMessageBuffer = new HashMap<long, String>();
-	sendMessageTimer = new HashMap<long, long>();
-	sendMessageBufferJData = new HashMap<long, JData *>();
-	sendAckBuffer = new HashMap<long, String>();
-	
-	idMessageReceived = new HashMap<long, long>();
-	
-	
-	//imposto le funzioni
-	
-	this->onReceive = onReceive;
-	
-	this->onReceiveAck = onReceiveAck;
-	
-	this->getTimestamp = getTimestamp;
-}
-
-*/
-
-Jack::~Jack() {
-
-	delete sendMessageBuffer; //buffer per i messaggi da inviare
-	delete sendMessageTimer; //buffer per i timer per i mex da inviare
-	delete sendMessageBufferJData; //buffer contenente il messaggi das inviare nel formato JData
-		
-	delete sendAckBuffer; //buffer degli ack da inviare
-		
-	delete idMessageReceived; //buffer contiene gli id dei messaggi già ricevuti
+	return _data->containsKey(key);
 }
 
 
-void Jack::start() { //avvia il polling
+// //---JACK---
 
-	stopPolling = 0;
-}
+// String Jack::MESSAGE_TYPE = "message_type"; //key tipo messaggio
+// String Jack::MESSAGE_DATA = "message_data"; //messaggio dati
+		
+// String Jack::MESSAGE_ID = "id"; //id messaggio
+		
+// String Jack::MESSAGE_TYPE_ACK = "ack"; //tipo ack
+// String Jack::MESSAGE_TYPE_DATA = "values"; //tipo dati
+		
+// String Jack::MESSAGE_BOOLEAN_TRUE = "t"; //simbolo invio boolean true
+// String Jack::MESSAGE_BOOLEAN_FALSE = "f";//simbolo invio boolean falso
+		
+// Jack::Jack(JTrasmissionMethod * mmJTM, void (* onReceive) (JData *), void (* onReceiveAck) (JData *), long (* getTimestamp) ()) { //costruttore con mmJTM e funzione onRceive e OnReceiveAck
+	
+// 	//valori di default
+// 	TIME_BEFORE_RESEND = 1000; //tempo reinvio ms
+	
+// 	SEND_ONE_TIME = 0; //inviare i pacchetti una volta sola
+	
+// 	stopPolling = 1;
+	
+// 	this->mmJTM = mmJTM;
+	
+// 	//creo buffer
+	
+// 	sendMessageBuffer = new HashMap<long, String>();
+// 	sendMessageTimer = new HashMap<long, long>();
+// 	sendMessageBufferJData = new HashMap<long, JData *>();
+// 	sendAckBuffer = new HashMap<long, String>();
+	
+// 	idMessageReceived = new HashMap<long, long>();
+	
+	
+// 	//imposto le funzioni
+	
+// 	this->onReceive = onReceive;
+	
+// 	this->onReceiveAck = onReceiveAck;
+	
+// 	this->getTimestamp = getTimestamp;
+	
+// }
 
-void Jack::stop() { //stoppa il polling
+// Jack::Jack(JTrasmissionMethod * mmJTM, void (* onReceive) (JData *), void (* onReceiveAck) (JData *), long (* getTimestamp) (), long timeBeforeResend) { //tempo per il reinvio
+	
+	
+// 	//valori di default
+// 	TIME_BEFORE_RESEND = timeBeforeResend; //tempo reinvio ms
+	
+// 	SEND_ONE_TIME = 0; //inviare i pacchetti una volta sola
+	
+// 	stopPolling = 1;
+	
+// 	this->mmJTM = mmJTM;
+	
+// 	//creo buffer
+	
+// 	sendMessageBuffer = new HashMap<long, String>();
+// 	sendMessageTimer = new HashMap<long, long>();
+// 	sendMessageBufferJData = new HashMap<long, JData *>();
+// 	sendAckBuffer = new HashMap<long, String>();
+	
+// 	idMessageReceived = new HashMap<long, long>();
+	
+	
+// 	//imposto le funzioni
+	
+// 	this->onReceive = onReceive;
+	
+// 	this->onReceiveAck = onReceiveAck;
+	
+// 	this->getTimestamp = getTimestamp;
+	
+// }
+// /*
+// Jack::Jack(JTrasmissionMethod * mmJTM, void (* onReceive) (JData *), void (* onReceiveAck) (JData *), long (* getTimestamp) (), int sendOneTime) { //indica se effettuare il reinvio dei mex se non confermati
+	
+// 	//valori di default
+// 	TIME_BEFORE_RESEND = 1000; //tempo reinvio ms
+	
+// 	SEND_ONE_TIME = sendOneTime;
+	
+// 	stopPolling = 1;
+	
+// 	this->mmJTM = mmJTM;
+	
+// 	//creo buffer
+	
+// 	sendMessageBuffer = new HashMap<long, String>();
+// 	sendMessageTimer = new HashMap<long, long>();
+// 	sendMessageBufferJData = new HashMap<long, JData *>();
+// 	sendAckBuffer = new HashMap<long, String>();
+	
+// 	idMessageReceived = new HashMap<long, long>();
+	
+	
+// 	//imposto le funzioni
+	
+// 	this->onReceive = onReceive;
+	
+// 	this->onReceiveAck = onReceiveAck;
+	
+// 	this->getTimestamp = getTimestamp;
+// }
 
-	stopPolling = 1;
-}
+// */
+
+// Jack::~Jack() {
+
+// 	delete sendMessageBuffer; //buffer per i messaggi da inviare
+// 	delete sendMessageTimer; //buffer per i timer per i mex da inviare
+// 	delete sendMessageBufferJData; //buffer contenente il messaggi das inviare nel formato JData
+		
+// 	delete sendAckBuffer; //buffer degli ack da inviare
+		
+// 	delete idMessageReceived; //buffer contiene gli id dei messaggi già ricevuti
+// }
+
+
+// void Jack::start() { //avvia il polling
+
+// 	stopPolling = 0;
+// }
+
+// void Jack::stop() { //stoppa il polling
+
+// 	stopPolling = 1;
+// }
 		
 
-void Jack::flushBufferSend() { //cancella i buffer contenente i messaggi da inviare		
+// void Jack::flushBufferSend() { //cancella i buffer contenente i messaggi da inviare		
 		
-	sendMessageBuffer = new HashMap<long, String>();
-	sendMessageBufferJData = new HashMap<long, JData *>();
-}
+// 	sendMessageBuffer = new HashMap<long, String>();
+// 	sendMessageBufferJData = new HashMap<long, JData *>();
+// }
 
-void Jack::execute(String message) { //funzione che gestisce il protocollo
+// void Jack::execute(String message) { //funzione che gestisce il protocollo
 			
-	if (validate(message)) {
+// 	if (validate(message)) {
 		
-		JData * messageJData = getJDataMessage(message);
+// 		JData * messageJData = getJDataMessage(message);
 		
-		if (messageJData->getString(MESSAGE_TYPE).equals(MESSAGE_TYPE_DATA)) {
+// 		if (messageJData->getString(MESSAGE_TYPE).equals(MESSAGE_TYPE_DATA)) {
 		
-			//Serial.println("check MEX GIA RICEVUTO mex ricevuto");
+// 			//Serial.println("check MEX GIA RICEVUTO mex ricevuto");
 		
-			if (!checkMessageAlreadyReceived(messageJData)) {
+// 			if (!checkMessageAlreadyReceived(messageJData)) {
 			
-				//Serial.println("MEX RICEVUTO trigger");
+// 				//Serial.println("MEX RICEVUTO trigger");
 				
-				(* onReceive) (messageJData->getJData(MESSAGE_DATA));
-			}
+// 				(* onReceive) (messageJData->getJData(MESSAGE_DATA));
+// 			}
 			
-		} else {
-			//Serial.println("CHECK mex ricevuto");
-			checkAck(messageJData);
-		}
+// 		} else {
+// 			//Serial.println("CHECK mex ricevuto");
+// 			checkAck(messageJData);
+// 		}
 		
 		
-		//Serial.println("elimino JData mex ricevuto");
-		delete messageJData;
+// 		//Serial.println("elimino JData mex ricevuto");
+// 		delete messageJData;
 		
-	}
+// 	}
 	
-	/*conferma test memoria*/
+// 	/*conferma test memoria*/
 			
-	//Serial.print("memoria dopo conferma: ");
-	//Serial.println(freeMemory());
+// 	//Serial.print("memoria dopo conferma: ");
+// 	//Serial.println(freeMemory());
 			
-	/*fine conferma test memoria*/
+// 	/*fine conferma test memoria*/
 		
-}
+// }
 
-int Jack::checkMessageAlreadyReceived(JData * message) { //verifica se il messaggio è già stato ricevuto
+// int Jack::checkMessageAlreadyReceived(JData * message) { //verifica se il messaggio è già stato ricevuto
 		
-	if (!message->containsKey(MESSAGE_ID)) { //validazione veloce
-		return 1;
-	}
+// 	if (!message->containsKey(MESSAGE_ID)) { //validazione veloce
+// 		return 1;
+// 	}
 	
-	sendAck(message);
+// 	sendAck(message);
 	
-	if (!idMessageReceived->containsKey(message->getLong(MESSAGE_ID))) {
+// 	if (!idMessageReceived->containsKey(message->getLong(MESSAGE_ID))) {
 		
-		idMessageReceived->put(message->getLong(MESSAGE_ID), 0); //da ottimizzare con una lista o un vettore
+// 		idMessageReceived->put(message->getLong(MESSAGE_ID), 0); //da ottimizzare con una lista o un vettore
 		
-		return 0;
+// 		return 0;
 		
-	} else {
-		return 1;
-	}
+// 	} else {
+// 		return 1;
+// 	}
 		
-}
+// }
 
-int Jack::validate(String message) { //verifica se il messaggio è conforme al protocollo
+// int Jack::validate(String message) { //verifica se il messaggio è conforme al protocollo
 		
-	//da implementare
+// 	//da implementare
 		
-	return 1;
+// 	return 1;
 		
-}
+// }
 
-void Jack::sendAck(JData * message) { //invia l'ack di conferma
+// void Jack::sendAck(JData * message) { //invia l'ack di conferma
 
-	String messageString = "{\"";
-	messageString += MESSAGE_ID;
-	messageString += "\":";
-	messageString += message->getLong(MESSAGE_ID);
-	messageString += ",\"";
-	messageString += MESSAGE_TYPE_ACK;
-	messageString += "\":1}";
+// 	String messageString = "{\"";
+// 	messageString += MESSAGE_ID;
+// 	messageString += "\":";
+// 	messageString += message->getLong(MESSAGE_ID);
+// 	messageString += ",\"";
+// 	messageString += MESSAGE_TYPE_ACK;
+// 	messageString += "\":1}";
 	
-	sendAckBuffer->put(message->getLong(MESSAGE_ID), messageString);
-}
+// 	sendAckBuffer->put(message->getLong(MESSAGE_ID), messageString);
+// }
 
-void Jack::checkAck(JData * message) { //controlla l'ack
+// void Jack::checkAck(JData * message) { //controlla l'ack
 	
-	long id = message->getLong(MESSAGE_ID);
+// 	long id = message->getLong(MESSAGE_ID);
 	
-	if (sendMessageBufferJData->length() > 0) {
+// 	if (sendMessageBufferJData->length() > 0) {
 		
-		if (sendMessageBufferJData->containsKey(id)) {
+// 		if (sendMessageBufferJData->containsKey(id)) {
 			
-			if (sendMessageBuffer->containsKey(id)) {
-				sendMessageBuffer->remove(id);
-			}
+// 			if (sendMessageBuffer->containsKey(id)) {
+// 				sendMessageBuffer->remove(id);
+// 			}
 			
-			if (sendMessageTimer->containsKey(id)) { //rimuovo il timer se presente3
-				sendMessageTimer->remove(id);
-			}
+// 			if (sendMessageTimer->containsKey(id)) { //rimuovo il timer se presente3
+// 				sendMessageTimer->remove(id);
+// 			}
 			
-			Serial.println("message Confirmed");
-			//Serial.println("CONFIRM RICEVUTO trigger");
-			(* onReceiveAck) (sendMessageBufferJData->getValue(id));
+// 			Serial.println("message Confirmed");
+// 			//Serial.println("CONFIRM RICEVUTO trigger");
+// 			(* onReceiveAck) (sendMessageBufferJData->getValue(id));
 			
-			//Serial.println("elimino JData messaggio inviato");
-			delete sendMessageBufferJData->getValue(id);
+// 			//Serial.println("elimino JData messaggio inviato");
+// 			delete sendMessageBufferJData->getValue(id);
 			
-			sendMessageBufferJData->remove(id);			
+// 			sendMessageBufferJData->remove(id);			
 			
-		}
+// 		}
 		
-	}
+// 	}
 		
-}
+// }
 
-void Jack::loop() { //luppa per simulare il thread
+// void Jack::loop() { //luppa per simulare il thread
 
-	if (mmJTM->available()) {
-		getMessagePollingFunction();
-	}
+// 	if (mmJTM->available()) {
+// 		getMessagePollingFunction();
+// 	}
 	
-	sendMessagePollingFunction();
+// 	sendMessagePollingFunction();
 
-}
+// }
 
-void Jack::getMessagePollingFunction() { //funzione che sostituisce il thread per il get dei messaggi
+// void Jack::getMessagePollingFunction() { //funzione che sostituisce il thread per il get dei messaggi
 
-	if (!stopPolling) {
+// 	if (!stopPolling) {
 		
-		String message = mmJTM->receive();
+// 		String message = mmJTM->receive();
 		
-		if (message.length() > 0) {
+// 		if (message.length() > 0) {
 			
-			Serial.println("message received: " + message);
+// 			Serial.println("message received: " + message);
 			
-			execute(message);
+// 			execute(message);
 			
-		}
+// 		}
 		
-	}
+// 	}
 	
-}
+// }
 
 
-void Jack::sendMessagePollingFunction() { //" " " per inviare i messaggi
+// void Jack::sendMessagePollingFunction() { //" " " per inviare i messaggi
 
-	if (!stopPolling) {
+// 	if (!stopPolling) {
 	
-		if (sendAckBuffer->moveToFirst()) { //invio ack
+// 		if (sendAckBuffer->moveToFirst()) { //invio ack
 		
-			do {
+// 			do {
 			
-				mmJTM->send(sendAckBuffer->getValue());
+// 				mmJTM->send(sendAckBuffer->getValue());
 				
-				sendAckBuffer->remove();
+// 				sendAckBuffer->remove();
 			
-			} while (sendAckBuffer->moveToNext());
+// 			} while (sendAckBuffer->moveToNext());
 			
-		}
+// 		}
 		
-		if (sendMessageBuffer->moveToFirst()) { //invio messaggi
+// 		if (sendMessageBuffer->moveToFirst()) { //invio messaggi
 			
-			do {
+// 			do {
 				
-				long key = sendMessageBuffer->getKey(); //prelevo la chiave (id)
+// 				long key = sendMessageBuffer->getKey(); //prelevo la chiave (id)
 				
-				if (sendMessageTimer->containsKey(key)) { //controllo se il messaggio è già stato inviato (presenza del buffer)
+// 				if (sendMessageTimer->containsKey(key)) { //controllo se il messaggio è già stato inviato (presenza del buffer)
 				
-					if ((millis() - sendMessageTimer->getValue(key)) > TIME_BEFORE_RESEND) { //controllo se è scaduto il tempo di attesa prima di reinviare il messaggio
+// 					if ((millis() - sendMessageTimer->getValue(key)) > TIME_BEFORE_RESEND) { //controllo se è scaduto il tempo di attesa prima di reinviare il messaggio
 						
-						mmJTM->send(sendMessageBuffer->getValue()); //invio il messaggio
+// 						mmJTM->send(sendMessageBuffer->getValue()); //invio il messaggio
 						
 						
-						//Serial.println("Elimino timer resend");
-						sendMessageTimer->remove(key);
-						//Serial.println("Eliminato");
+// 						//Serial.println("Elimino timer resend");
+// 						sendMessageTimer->remove(key);
+// 						//Serial.println("Eliminato");
 						
-						sendMessageTimer->put(key, millis());
+// 						sendMessageTimer->put(key, millis());
 						
-					}
+// 					}
 				
 				
-				} else { //messaggio da inviare per la prima volta
-					//Serial.println("First send");
-					mmJTM->send(sendMessageBuffer->getValue()); //invio il messaggio
+// 				} else { //messaggio da inviare per la prima volta
+// 					//Serial.println("First send");
+// 					mmJTM->send(sendMessageBuffer->getValue()); //invio il messaggio
 					
-					if (!SEND_ONE_TIME) {//controllo se non è da inviare una volta sola
+// 					if (!SEND_ONE_TIME) {//controllo se non è da inviare una volta sola
 						
-						sendMessageTimer->put(key, millis());
+// 						sendMessageTimer->put(key, millis());
 						
-					} else { //messaggio da inviare una sola volta
+// 					} else { //messaggio da inviare una sola volta
 					
-						sendMessageBuffer->remove(key);
+// 						sendMessageBuffer->remove(key);
 						
-					}
+// 					}
 				
-				}
+// 				}
 			
-			} while (sendMessageBuffer->moveToNext());
+// 			} while (sendMessageBuffer->moveToNext());
 			
 		
-		}
-	}
+// 		}
+// 	}
 
-}
+// }
 
 
-void Jack::send(JData * message) { //invia il messaggio
+// void Jack::send(JData * message) { //invia il messaggio
 	
-	long id = (* getTimestamp) ();
+// 	long id = (* getTimestamp) ();
 	
-	String messageString = "{\"" + MESSAGE_ID + "\":";
-	messageString += id;
-	messageString += ",\"" + MESSAGE_TYPE_DATA + "\":[{";
+// 	String messageString = "{\"" + MESSAGE_ID + "\":";
+// 	messageString += id;
+// 	messageString += ",\"" + MESSAGE_TYPE_DATA + "\":[{";
 	
-	for(int i = 0; i < message->length(); i++) {
+// 	for(int i = 0; i < message->length(); i++) {
 		
-		messageString += "\"";
-		messageString += message->getKey(i);
-		messageString += "\":";
+// 		messageString += "\"";
+// 		messageString += message->getKey(i);
+// 		messageString += "\":";
 		
-		int type = message->getType(i);
+// 		int type = message->getType(i);
 		
-		if (type == JData::LONG) {
+// 		if (type == JData::LONG) {
 		
-			messageString += message->getLong(i);
+// 			messageString += message->getLong(i);
 		
-		} else if (type == JData::DOUBLE) {
+// 		} else if (type == JData::DOUBLE) {
 			
-			messageString += message->getDoubleString(i);
+// 			messageString += message->getDoubleString(i);
 		
-		} else if (type == JData::BOOLEAN) {
+// 		} else if (type == JData::BOOLEAN) {
 			
-			if (message->getBoolean(i)) {
-				messageString += MESSAGE_BOOLEAN_TRUE;
-			} else {
-				messageString += MESSAGE_BOOLEAN_FALSE;
-			}
+// 			if (message->getBoolean(i)) {
+// 				messageString += MESSAGE_BOOLEAN_TRUE;
+// 			} else {
+// 				messageString += MESSAGE_BOOLEAN_FALSE;
+// 			}
 		
-		} else if (type == JData::STRING) {
+// 		} else if (type == JData::STRING) {
 		
-			messageString += "\"";
-			messageString += message->getString(i);
-			messageString += "\"";
+// 			messageString += "\"";
+// 			messageString += message->getString(i);
+// 			messageString += "\"";
 			
-		}
+// 		}
 		
-		messageString += ",";
+// 		messageString += ",";
 		
-	}
+// 	}
 	
 	
-	messageString = messageString.substring(0, messageString.length() -1);
+// 	messageString = messageString.substring(0, messageString.length() -1);
 	
-	messageString += "}]}";
+// 	messageString += "}]}";
 	
 	
-	sendMessageBuffer->put(id, messageString);
+// 	sendMessageBuffer->put(id, messageString);
 	
-	sendMessageBufferJData->put (id, message);
+// 	sendMessageBufferJData->put (id, message);
 	
-}
+// }
 
-JData * Jack::getJDataMessage(String message) { //preleva i dati dal messaggio e crea il messaggio nel formato JData
+// JData * Jack::getJDataMessage(String message) { //preleva i dati dal messaggio e crea il messaggio nel formato JData
 	
-	//Serial.print("JDATAGET: ");
-	//Serial.println(freeMemory());
+// 	//Serial.print("JDATAGET: ");
+// 	//Serial.println(freeMemory());
 	
 	
-	JData * messageJData = new JData();
+// 	JData * messageJData = new JData();
 	
-	String temp = "";
-	String temp2 = "";
+// 	String temp = "";
+// 	String temp2 = "";
 	
-	int nChar = 0;
+// 	int nChar = 0;
 	
-	int value;
+// 	int value;
 	
-	message = message.substring(2, message.length());
+// 	message = message.substring(2, message.length());
 	
-	for(int i = 0; i < 2; i++) {
+// 	for(int i = 0; i < 2; i++) {
 	
-		temp = "";
+// 		temp = "";
 		
-		//Serial.println(message);
+// 		//Serial.println(message);
 		
-		if (message.startsWith(MESSAGE_ID)) { //id
+// 		if (message.startsWith(MESSAGE_ID)) { //id
 			
-			message = message.substring(MESSAGE_ID.length() + 2, message.length());
+// 			message = message.substring(MESSAGE_ID.length() + 2, message.length());
 			
-			for(int x = 0; message.charAt(x) != ','; x++) { //prelevo l'id dal messaggio
+// 			for(int x = 0; message.charAt(x) != ','; x++) { //prelevo l'id dal messaggio
 				
-				temp += message.charAt(x);
+// 				temp += message.charAt(x);
 				
-			}
+// 			}
 			
-			if (i < 1) {
-				message = message.substring(temp.length() + 2, message.length());
-			}
+// 			if (i < 1) {
+// 				message = message.substring(temp.length() + 2, message.length());
+// 			}
 			
-			LongWrapper lw(temp);
+// 			LongWrapper lw(temp);
 			
-			messageJData->addLong(MESSAGE_ID, lw.getLong());
+// 			messageJData->addLong(MESSAGE_ID, lw.getLong());
 			
-			//Serial.println("id: " + temp);
+// 			//Serial.println("id: " + temp);
 			
 			
-		} else if (message.startsWith(MESSAGE_TYPE_ACK)) { //ack
+// 		} else if (message.startsWith(MESSAGE_TYPE_ACK)) { //ack
 		
-			messageJData->addString(MESSAGE_TYPE, MESSAGE_TYPE_ACK);
+// 			messageJData->addString(MESSAGE_TYPE, MESSAGE_TYPE_ACK);
 			
-			if (i < 1) {
-				message = message.substring(MESSAGE_TYPE_DATA.length() + 5, message.length());
-			}
+// 			if (i < 1) {
+// 				message = message.substring(MESSAGE_TYPE_DATA.length() + 5, message.length());
+// 			}
 			
-			//Serial.println("ack");
-		}
+// 			//Serial.println("ack");
+// 		}
 	
-	}
+// 	}
 	
-	return messageJData;
+// 	return messageJData;
 
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// }
