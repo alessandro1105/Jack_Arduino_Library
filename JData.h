@@ -21,18 +21,8 @@
 #define JDATA_H
 
 #include <Arduino.h>
-#include <HashMap.h>
-#include <Wrappers.h>
-
-
-//---JDATA ENUM---
-typedef enum JDType {
-   JD_LONG,
-   JD_DOUBLE,
-   JD_BOOLEAN,
-   JD_STRING,
-   JD_JDATA
-};
+#include <ArduinoJson.h>
+#include <Jack.h>
 
 
 //---JDATA---
@@ -43,64 +33,43 @@ class JData {
       
       JData();
       ~JData(); //distruttore
+
+      //add function
+      void add(const char *key, bool value);
+      void add(const char *key, float value, uint8_t decimals = 2);
+      void add(const char *key, double value, uint8_t decimals = 2);
+      void add(const char *key, signed char value);
+      void add(const char *key, signed long value);
+      void add(const char *key, signed int value);
+      void add(const char *key, signed short value);
+      void add(const char *key, unsigned char value);
+      void add(const char *key, unsigned long value);
+      void add(const char *key, unsigned int value);
+      void add(const char *key, unsigned short value);
+      void add(const char *key, const char *value);
+      void add(const char *key, const String &value);
       
-      //add
-      void addLong(String key, long value);
-      void addDouble(String key, double value);
-      void addBoolean(String key, int value);
-      void addString(String key, String value);
-      void addJData(String key, JData * value);
       
-      //get 
-      long getLong(String key);
-      long getLong(int index);
-      
-      double getDouble(String key);
-      double getDouble(int index);
-      
-      String getDoubleString(String key);
-      String getDoubleString(int index);
-      
-      int getBoolean(String key);
-      int getBoolean(int index);
-      
-      String getString(String key);
-      String getString(int index);
-      
-      JData *getJData(String key);
-      JData *getJData(int index);
-      
-      //get key
-      String getKey(int index);
-      
-      //get type stored
-      JDType getType(String key);
-      JDType getType(int index);
-      
-      //get size
-      int length();
-      
-      //contains
-      int containsKey(String key);
+      //get
+      JsonVariant get(const char *key);
+
 
    private:
 
-      //numero elementi memorizzati
-      int _size;
-      
-      //contenitori dei dati
-      HashMap<String, Wrapper *> *_data;
-      HashMap<int, String> *_indexes;
-      
-      //
-      void addWrapper(String key, Wrapper * wrapper);
-      
-      Wrapper *getWrapper(String key);
-      Wrapper *getWrapper(int index);
-      
-      int getWrapperType(String key);
-      int getWrapperType(int index);
+      //costruisce l'oggetto nested per memorizzare i dati degli utenti
+      void createNestedObject();
 
+      //indica se è stato costruito l'oggetto nested
+      uint8_t _nestedObjectExists;
+
+      //buffer Json
+      StaticJsonBuffer<500> _buffer;
+
+
+   protected: //accessibile da Jack
+
+      //json object
+      JsonObject *_root;
 };
 
 

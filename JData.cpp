@@ -23,222 +23,157 @@
 
 //---JDATA---
 JData::JData() { //costruttore
-   
-   //costruisco i contenitori dei dati
-   _data = new HashMap<String, Wrapper *>();
-   _indexes = new HashMap<int, String>();
-   
-   //azzero il numero di elementi memorizzati
-   _size = 0;
-   
+
+   //costruisco la root
+   _root = &jsonBuffer.createObject();
+
+   //indico che l'oggetto nested non è ancora stato creato
+   _nestedObjectExists = 0;
 }
+
 
 JData::~JData() { //distruttore
-   
-   //elimino tutti gli elementi contenuti
-   if (_data->moveToFirst()) {
-      
-      do {
-         Wrapper *wrapper = _data->value();
-         
-         switch (wrapper->type()) {
-      
-            case WR_LONG:
-               delete static_cast<LongWrapper *>(wrapper);
-               break;
-               
-            case WR_DOUBLE:
-               delete static_cast<DoubleWrapper *>(wrapper);
-               break;
-            
-            case WR_BOOLEAN:
-               delete static_cast<BooleanWrapper *>(wrapper);
-               break;
-               
-            case WR_STRING:
-               delete static_cast<StringWrapper *>(wrapper);
-               break;
-               
-            case WR_JDATA:
-               delete static_cast<JDataWrapper *>(wrapper);
-               break;
-         
-   
-         }
-      
-      } while (_data->moveToNext());
-      
-   }  
 
-   //elimino i due contenitori
-   delete _data; //elimino la struttura contenuta in HashMap
-   delete _indexes; //elimino la struttura contenuta in HashMap
+   //elimino la root
+   delete _root;
 }
 
-//add wrapper
-void JData::addWrapper(String key, Wrapper * wrapper) {
-   
-   //inserisco il wrapper
-   _data->put(key, wrapper);
-
-   //inserisco l'indice
-   _indexes->put(_size, key);
-   
-   //incremento la dimensione
-   _size++;
-   
-};
-
-//get wrapper
-Wrapper * JData::getWrapper(String key) {
-   return _data->valueFor(key);
-}
-
-Wrapper * JData::getWrapper(int index) {
-   return getWrapper(getKey(index));
-}
-      
-int JData::getWrapperType(String key) {
-   return getWrapper(key)->type();
-}
-
-int JData::getWrapperType(int index) {
-   return getWrapperType(getKey(index));
-}
-
-//adder
-void JData::addLong(String key, long value) {
-
-   LongWrapper * wrapper = new LongWrapper(value);
-   
-   addWrapper(key, wrapper);
-}
-
-void JData::addDouble(String key, double value) {
-   
-   DoubleWrapper * wrapper = new DoubleWrapper(value);
-   
-   addWrapper(key, wrapper);
-
-}
-
-void JData::addBoolean(String key, int value) {
-
-   BooleanWrapper * wrapper = new BooleanWrapper(value);
-   
-   addWrapper(key, wrapper);
-
-}
-
-void JData::addString(String key, String value) {
-   
-   StringWrapper * wrapper = new StringWrapper(value);
-   
-   addWrapper(key, wrapper);
-}
-
-void JData::addJData(String key, JData * value) {
-   
-   JDataWrapper * wrapper = new JDataWrapper(value);
-   
-   addWrapper(key, wrapper);
-
-}
-
-//get 
-long JData::getLong(String key) {
-   return static_cast<LongWrapper *>(getWrapper(key))->getLong();
-}
-
-long JData::getLong(int index) {
-   return getLong(getKey(index));
-}
-      
-double JData::getDouble(String key) {
-   return static_cast<DoubleWrapper *>(getWrapper(key))->getDouble();
-}
-
-double JData::getDouble(int index) {
-   return getDouble(getKey(index));
-}
-
-String JData::getDoubleString(String key) {
-   return static_cast<DoubleWrapper *>(getWrapper(key))->getString();
-}
-
-String JData::getDoubleString(int index) {
-   return getDoubleString(getKey(index));
-}
-   
-int JData::getBoolean(String key) {
-   return static_cast<BooleanWrapper *>(getWrapper(key))->getBoolean();
-}
-
-int JData::getBoolean(int index) {
-   return getBoolean(getKey(index));
-}
-      
-String JData::getString(String key) {
-   return static_cast<StringWrapper *>(getWrapper(key))->getString();
-}
-
-String JData::getString(int index) {
-   return getString(getKey(index));
-}
-
-JData * JData::getJData(String key) {
-   return static_cast<JDataWrapper *>(getWrapper(key))->getJData();
-}
-
-JData * JData::getJData(int index) {
-   return getJData(getKey(index));
-}
-      
-//get key
-String JData::getKey(int index) {
-   return _indexes->valueAt(index);
-}
-      
-//get type stored
-JDType JData::getType(String key) {
-   
-   switch (getWrapperType(key)) {
-      
-      case WR_LONG:
-         return JD_LONG;
-         break;
-         
-      case WR_DOUBLE:
-         return JD_DOUBLE;
-         break;
-      
-      case WR_BOOLEAN:
-         return JD_BOOLEAN;
-         break;
-         
-      case WR_STRING:
-         return JD_STRING;
-         break;
-         
-      case WR_JDATA:
-         return JD_JDATA;
-         break;
-         
-   
+//---ADD FUNCTION---
+void JData::add(const char *key, bool value) {
+   //verifico se è stato costruito l'oggetto nested per memorizzare i dati
+   if (!_nestedObjectExists) {
+      createNestedObject();
    }
 
+   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+
 }
 
-JDType JData::getType(int index) {
-   return getType(getKey(index));
+void JData::add(const char *key, float value, uint8_t decimals = 2) {
+   //verifico se è stato costruito l'oggetto nested per memorizzare i dati
+   if (!_nestedObjectExists) {
+      createNestedObject();
+   }
+
+   _root[JK_MESSAGE_TYPE_DATA][key] = value;
 }
-      
-//get size
-int JData::length() {
-   return _size;
+
+void JData::add(const char *key, double value, uint8_t decimals = 2) {
+   //verifico se è stato costruito l'oggetto nested per memorizzare i dati
+   if (!_nestedObjectExists) {
+      createNestedObject();
+   }
+
+   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+}
+
+void JData::add(const char *key, signed char value) {
+   //verifico se è stato costruito l'oggetto nested per memorizzare i dati
+   if (!_nestedObjectExists) {
+      createNestedObject();
+   }
+
+   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+}
+
+void JData::add(const char *key, signed long value) {
+   //verifico se è stato costruito l'oggetto nested per memorizzare i dati
+   if (!_nestedObjectExists) {
+      createNestedObject();
+   }
+
+   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+}
+
+void JData::add(const char *key, signed int value) {
+   //verifico se è stato costruito l'oggetto nested per memorizzare i dati
+   if (!_nestedObjectExists) {
+      createNestedObject();
+   }
+
+   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+}
+
+void JData::add(const char *key, signed short value) {
+   //verifico se è stato costruito l'oggetto nested per memorizzare i dati
+   if (!_nestedObjectExists) {
+      createNestedObject();
+   }
+
+   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+}
+
+void JData::add(const char *key, unsigned char value) {
+   //verifico se è stato costruito l'oggetto nested per memorizzare i dati
+   if (!_nestedObjectExists) {
+      createNestedObject();
+   }
+
+   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+}
+
+void JData::add(const char *key, unsigned long value) {
+   //verifico se è stato costruito l'oggetto nested per memorizzare i dati
+   if (!_nestedObjectExists) {
+      createNestedObject();
+   }
+
+   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+}
+
+void JData::add(const char *key, unsigned int value) {
+   //verifico se è stato costruito l'oggetto nested per memorizzare i dati
+   if (!_nestedObjectExists) {
+      createNestedObject();
+   }
+
+   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+}
+
+void JData::add(const char *key, unsigned short value) {
+   //verifico se è stato costruito l'oggetto nested per memorizzare i dati
+   if (!_nestedObjectExists) {
+      createNestedObject();
+   }
+
+   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+}
+
+void JData::add(const char *key, const char *value) {
+   //verifico se è stato costruito l'oggetto nested per memorizzare i dati
+   if (!_nestedObjectExists) {
+      createNestedObject();
+   }
+
+   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+}
+
+void JData::add(const char *key, const String &value) {
+   //verifico se è stato costruito l'oggetto nested per memorizzare i dati
+   if (!_nestedObjectExists) {
+      createNestedObject();
+   }
+
+   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+}
+
+//---GET FUNCTION---
+JsonVariant JData::get(const char *key) {
+
+   //ritorno il dato richiesto
+   return _root[JK_MESSAGE_TYPE_DATA][key];
+}
+
+//---PRIVATE---
+
+//funzione che crea l'oggetto nested
+void JData::createNestedObject() {
+
+   //creo l'oggetto nested
+   _root.createNestedObject(JK_MESSAGE_TYPE_DATA);
+
+   //indico che è stato creato
+   _nestedObjectExists = 1;
 }
 
 
-int JData::containsKey(String key) {
-   return _data->containsKey(key);
-}

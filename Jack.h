@@ -24,9 +24,9 @@
 
 #include <Arduino.h>
 #include <HashMap.h>
-#include <Wrappers.h>
+//#include <Wrappers.h>
 #include "JData.h"
-#include "JDataWrappers.h"
+//#include "JDataWrappers.h"
 #include "JTransmissionMethod.h"
 #include <ArduinoJson.h>
 
@@ -34,14 +34,14 @@
 //---CONSTANTI---
 
 //Jack
-#define JK_MESSAGE_TYPE "jk_type" //key tipo messaggio
-#define JK_MESSAGE_DATA "jk_data" //messaggio dati
-#define JK_MESSAGE_ACK "jk_ack" //messaggio ack
+#define JK_MESSAGE_TYPE "type" //key tipo messaggio
+#define JK_MESSAGE_DATA "data" //messaggio dati
+#define JK_MESSAGE_ACK "ack" //messaggio ack
 		
 #define JK_MESSAGE_ID "id" //id messaggio
 		
 #define JK_MESSAGE_TYPE_ACK "ack" //tipo ack
-#define JK_MESSAGE_TYPE_DATA "values" //tipo dati
+#define JK_MESSAGE_TYPE_DATA "val" //tipo dati
 
 #define JK_TIMER_RESEND_MESSAGE 1000//tempo (ms) da attendere prima di reinviare i messaggi non confermati
 #define JK_TIMER_POLLING 100 //tempo (ms) da attendere tra un polling e un altro del mezzo di strasmissione
