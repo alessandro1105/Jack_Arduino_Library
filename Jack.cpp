@@ -124,41 +124,58 @@ void Jack::loop() { //luppa per simulare il thread
 //---PRIVATE---
 
 //DA RIVEDERE
-void Jack::execute(char *messageString) { //funzione che gestisce il protocollo
+void Jack::execute(char *messageJSON) { //funzione che gestisce il protocollo
 
-	//se il messaggio è in formato valido
-	if (JData *message = getMessageJData(messageString)) {
+	//creo memory pool
+	StaticJsonBuffer<500> jsonBuffer;
 
-		if (message->getChar(MESSAGE_TYPE).equals(MESSAGE_TYPE_DATA))
+	//creo la root a partire dal messaggio JSON
+	JsonObject *root = &_jsonBuffer.parseObject(messageJSON);
 
-	}
+	//verifo se il messaggio è un messaggio valido
+	if (root->success()) {
 
+		//ottengo il tipo del messaggio
+		char *type = root[JK_MESSAGE_TYPE];
 
-	//codice vecchio			
-	if (validate(message)) {
-		
-		JData * messageJData = getJDataMessage(message);
-		
-		if (messageJData->getString(MESSAGE_TYPE).equals(MESSAGE_TYPE_DATA)) {
-		
-			//Serial.println("check MEX GIA RICEVUTO mex ricevuto");
-		
-			if (!checkMessageAlreadyReceived(messageJData)) {
-			
-				//Serial.println("MEX RICEVUTO trigger");
-				
-				(* onReceive) (messageJData->getJData(MESSAGE_DATA));
-			}
-			
+		//tipo dati
+		if (strcmp(type, JK_MESSAGE_TYPE_DATA)) {
+
+			//costruisco il messaggio JData
+			JData *message = new JData(root);
+
+			//ottengo l'id del messaggio
+			long id = root[JK_MESSAGE_ID];
+
+			//confermo il messaggio
+			sendAck(id);
+
+			//chiamo la funzione di gestione definita dall'utenye
+			(* onReceive) (message);
+
+			//elimino JData
+			delete message;
+
+		//tipo ACK
+		} else if (strcmp(type, JK_MESSAGE_TYPE_ACK)) {
+
+			//ottengo l'id del messaggio
+			long id = root[JK_MESSAGE_ID];
+
+			//elimino il messaggio
+			delete root;
+
+			//chiamo la funzione di gestione degli ack
+			checkAck(id);
+
+		//messaggio sconosciuto
 		} else {
-			//Serial.println("CHECK mex ricevuto");
-			checkAck(messageJData);
+			delete root;
 		}
-		
-		
-		//Serial.println("elimino JData mex ricevuto");
-		delete messageJData;
-		
+
+	//messaggio non valido
+	} else {
+		delete root;
 	}
 		
 }
@@ -203,156 +220,31 @@ void Jack::checkAck(long id) { //controlla l'ack
 
 
 //DA RIVEDERE
-void Jack::send(JData * message) { //invia il messaggio
+void Jack::send(JData *messageJData) { //invia il messaggio
 
-	//creo memory pool
-	StaticJsonBuffer<500> jsonBuffer;
+	//prelevo la root del messaggio
+	JsonObject root = messageJData->getRoot();
 
-	//creo root del messaggio
-	JsonObject& root = jsonBuffer.createObject();
-	
 	//ottengo il timestamp da usare come id del messaggio
 	long id = (* getTimestamp) ();
-		
-	//scorro i dati contenuti in JData
-	for (int i = 0; i < message.length; i++) {
 
-		JDType type message->getType(i);
+	//aggiungo id e la tipologia del messaggio
+	root[JK_MESSAGE_ID] = id; //id del messaggio da confermare
+	root[JK_MESSAGE_TYPE] = JK_MESSAGE_DATA; //il messaggio è un ACK
 
-		switch (type) {
-			case JD_LONG:
-				root[message->getKey(i)]
-				break;
+	//verifico la dimensione del messaggio più il carattere di terminazione
+	size_t length = root.measureLength() +1;
 
-			case JD_DOUBLE:
-				break;
+	//creo buffer per contenere il messaggio
+	char message[length];
 
-			case JD_BOOLEAN:
-				break;
+	//ottengo il messaggio in JSON
+	root.printTo(message, length);
 
-			case JD_STRING:
-				break;
+	//elimino il messaggio nel formato JData
+	delete messageJData;
 
-			case JD_JDATA:
-				break;
-
-		}
-
-	}
-
-
-	String messageString = "{\"" + MESSAGE_ID + "\":";
-	messageString += id;
-	messageString += ",\"" + MESSAGE_TYPE_DATA + "\":[{";
+	//inserisco il messaggio nel buffer di invio
+	_messageBuffer->put(id, messageString);
 	
-	for(int i = 0; i < message->length(); i++) {
-		
-		messageString += "\"";
-		messageString += message->getKey(i);
-		messageString += "\":";
-		
-		int type = message->getType(i);
-		
-		if (type == JData::LONG) {
-		
-			messageString += message->getLong(i);
-		
-		} else if (type == JData::DOUBLE) {
-			
-			messageString += message->getDoubleString(i);
-		
-		} else if (type == JData::BOOLEAN) {
-			
-			if (message->getBoolean(i)) {
-				messageString += MESSAGE_BOOLEAN_TRUE;
-			} else {
-				messageString += MESSAGE_BOOLEAN_FALSE;
-			}
-		
-		} else if (type == JData::STRING) {
-		
-			messageString += "\"";
-			messageString += message->getString(i);
-			messageString += "\"";
-			
-		}
-		
-		messageString += ",";
-		
-	}
-	
-	
-	messageString = messageString.substring(0, messageString.length() -1);
-	
-	messageString += "}]}";
-	
-	
-	sendMessageBuffer->put(id, messageString);
-	
-	sendMessageBufferJData->put (id, message);
-	
-}
-
-//DA RIVEDERE
-JData * Jack::getMessageJData(String message) { //preleva i dati dal messaggio e crea il messaggio nel formato JData
-	
-	//Serial.print("JDATAGET: ");
-	//Serial.println(freeMemory());
-
-	//DA JSON deve ritornare un oggetto JDATA
-	
-	
-	JData * messageJData = new JData();
-	
-	String temp = "";
-	String temp2 = "";
-	
-	int nChar = 0;
-	
-	int value;
-	
-	message = message.substring(2, message.length());
-	
-	for(int i = 0; i < 2; i++) {
-	
-		temp = "";
-		
-		//Serial.println(message);
-		
-		if (message.startsWith(MESSAGE_ID)) { //id
-			
-			message = message.substring(MESSAGE_ID.length() + 2, message.length());
-			
-			for(int x = 0; message.charAt(x) != ','; x++) { //prelevo l'id dal messaggio
-				
-				temp += message.charAt(x);
-				
-			}
-			
-			if (i < 1) {
-				message = message.substring(temp.length() + 2, message.length());
-			}
-			
-			LongWrapper lw(temp);
-			
-			messageJData->addLong(MESSAGE_ID, lw.getLong());
-			
-			//Serial.println("id: " + temp);
-			
-			
-		} else if (message.startsWith(MESSAGE_TYPE_ACK)) { //ack
-		
-			messageJData->addString(MESSAGE_TYPE, MESSAGE_TYPE_ACK);
-			
-			if (i < 1) {
-				message = message.substring(MESSAGE_TYPE_DATA.length() + 5, message.length());
-			}
-			
-			//Serial.println("ack");
-		}
-	
-	}
-	
-	return messageJData;
-
 }

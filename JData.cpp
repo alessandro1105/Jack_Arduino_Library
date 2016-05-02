@@ -29,6 +29,7 @@ JData::JData() { //costruttore
 
    //indico che l'oggetto nested non è ancora stato creato
    _nestedObjectExists = 0;
+
 }
 
 
@@ -164,6 +165,7 @@ JsonVariant JData::get(const char *key) {
    return _root[JK_MESSAGE_TYPE_DATA][key];
 }
 
+
 //---PRIVATE---
 
 //funzione che crea l'oggetto nested
@@ -174,6 +176,24 @@ void JData::createNestedObject() {
 
    //indico che è stato creato
    _nestedObjectExists = 1;
+}
+
+
+//---PROTECTED---
+
+//costruttore privato che permette di costruire JData a partire da JsonObject
+JData::JData(JsonObject &root) { //costruttore
+
+   //salvo la root
+   _root = root;
+
+   //indico che l'oggetto nested è stato creato
+   _nestedObjectExists = 1;
+}
+
+//restituisce la root
+JsonObject *JData::getRoot() {
+   return _root;
 }
 
 

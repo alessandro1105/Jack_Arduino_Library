@@ -29,6 +29,9 @@
 //classe usata come contenitore per i messaggi
 class JData {
 
+   //la classe Jack può accedere ai membri privati di JData
+   friend class Jack;
+
    public:
       
       JData();
@@ -65,11 +68,17 @@ class JData {
       //buffer Json
       StaticJsonBuffer<500> _buffer;
 
-
-   protected: //accessibile da Jack
-
       //json object
       JsonObject *_root;
+
+   protected:
+
+      //costruttore privato che permette di costruire JData a partire da JsonObject
+      JData(JsonObject &root);
+
+      //restituisce la root
+      JsonObject *getRoot(); 
+
 };
 
 

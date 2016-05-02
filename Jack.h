@@ -17,6 +17,31 @@
    @url            https://github.com/alessandro1105
 */
 
+/*
+
+TIPOLOGIA MESSAGGI JACK
+
+	
+	//MESSAGGIO DATI
+	{
+		"id": 123,
+		"type": "data",
+		"val": { //NESTED OBJECT
+					"TIMESTAMP": timestamp,
+					"GSR":	gsr,
+					"TEMPERATURE": temperature
+		}
+	}
+
+	//MESSAGGIO ACK
+	{
+		"id": 123,
+		"type": "ack",
+	}
+
+	Payload è dentro val:
+*/
+
 
 #ifndef JACK_H
 #define JACK_H
@@ -35,13 +60,10 @@
 
 //Jack
 #define JK_MESSAGE_TYPE "type" //key tipo messaggio
-#define JK_MESSAGE_DATA "data" //messaggio dati
-#define JK_MESSAGE_ACK "ack" //messaggio ack
-		
-#define JK_MESSAGE_ID "id" //id messaggio
-		
 #define JK_MESSAGE_TYPE_ACK "ack" //tipo ack
 #define JK_MESSAGE_TYPE_DATA "val" //tipo dati
+		
+#define JK_MESSAGE_ID "id" //id messaggio
 
 #define JK_TIMER_RESEND_MESSAGE 1000//tempo (ms) da attendere prima di reinviare i messaggi non confermati
 #define JK_TIMER_POLLING 100 //tempo (ms) da attendere tra un polling e un altro del mezzo di strasmissione
@@ -81,17 +103,11 @@ class Jack {
 	private:		
 
 		//funzione che elabora i messaggi ricevuti
-		void execute(char *message); //funzione che gestisce il protocollo
-		
-
-		//ritorna il messaggio in JData
-		JData *getMessageJData(String messageString); //preleva i dati dal messaggio e crea il messaggio nel formato JData
-		
+		void execute(char *messageJSON); //funzione che gestisce il protocollo		
 
 		//gestione ACK
 		void sendAck(long id); //invia l'ack di conferma
 		void checkAck(long id); //controlla l'ack
-		
 
 		//timer
 		long _timerSendMessage; //tempo (ms) da attendere prima di reinviare i messaggi non confermati
@@ -100,15 +116,12 @@ class Jack {
 		//tempi
 		long _timeLastPolling;
 		long _timeLastSend;
-		
 
 		//mezzo di trasmissione
 		JTransmissionMethod *_mmJTM; //contiene il metodo di trasmissione da usare
-		
 
 		//contenitori dei dati
 		HashMap<long, char *> *_messageBuffer; //buffer per i messaggi da inviare
-
 		
 		//indica se il polling è fermo o meno
 		uint8_t _pollingEnabled; //indica se il polling è fermo (non si ricevono messaggi)
