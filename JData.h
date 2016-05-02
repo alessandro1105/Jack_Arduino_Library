@@ -41,12 +41,6 @@ class JData {
 
    public:
       
-      static const int LONG = 0;
-      static const int DOUBLE = 1;
-      static const int BOOLEAN = 2;
-      static const int STRING = 3;
-      static const int JDATA = 4;
-      
       JData();
       ~JData(); //distruttore
       

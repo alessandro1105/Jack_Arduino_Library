@@ -28,18 +28,27 @@
 #include "JData.h"
 #include "JDataWrappers.h"
 #include "JTransmissionMethod.h"
+#include <ArduinoJson.h>
 
 
 //---CONSTANTI---
 
 //Jack
-#define JK_MESSAGE_TYPE "message_type" //key tipo messaggio
-#define JK_MESSAGE_DATA "message_data" //messaggio dati
+#define JK_MESSAGE_TYPE "jk_type" //key tipo messaggio
+#define JK_MESSAGE_DATA "jk_data" //messaggio dati
+#define JK_MESSAGE_ACK "jk_ack" //messaggio ack
 		
 #define JK_MESSAGE_ID "id" //id messaggio
 		
 #define JK_MESSAGE_TYPE_ACK "ack" //tipo ack
 #define JK_MESSAGE_TYPE_DATA "values" //tipo dati
+
+#define JK_TIMER_RESEND_MESSAGE 1000//tempo (ms) da attendere prima di reinviare i messaggi non confermati
+#define JK_TIMER_POLLING 100 //tempo (ms) da attendere tra un polling e un altro del mezzo di strasmissione
+
+//---DEBUG---
+#define DEBUG 1
+
 
 
 //---JACK---
@@ -48,76 +57,65 @@ class Jack {
 		
 	public:
 	
-		Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), void (*onReceiveAck) (JData *), long (* getTimestamp) ()); //costruttore con mmJTM e funzione onRceive e OnReceiveAck
+		//construttori
+		Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (* getTimestamp) ()); //costruttore con mmJTM e funzione onRceive e OnReceiveAck
+		Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (* getTimestamp) (), long timerResendMessage, long timerPolling); //tempo per il reinvio
 		
-		Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), void (*onReceiveAck) (JData *), long (* getTimestamp) (), long timeBeforeResend); //tempo per il reinvio
-		
+		//distruttore
 		~Jack(); //distruttore
 		
-		
+		//funzioni per attivare il polling del mezzo di trasmissione
 		void start(); //avvia il polling
-		
 		void stop(); //stoppa il polling
 		
+		//controlla il buffer di invio
 		void flushBufferSend(); //cancella i buffer contenente i messaggi da inviare
 		
+		//invio messaggi
 		void send(JData * message); //invia il messaggio
 		
-		void loop(); //luppa per simulare il thread
-		
-		//void remove(JData * message); //elimina un messaggio cancellato
+		//loop
+		void loop(); //luppa per simulare il thread ed esegue le funzioni di polling su mmJTM
 
-	private:
-	
-		long TIME_BEFORE_RESEND; //tempo reinvio ms
-		int SEND_ONE_TIME; //inviare i pacchetti una volta sola
-		
-		static const int TIMER_POLLING = 100;
-		
-		static String MESSAGE_TYPE; //key tipo messaggio
-		static String MESSAGE_DATA; //messaggio dati
-		
-		static String MESSAGE_ID; //id messaggio
-		
-		static String MESSAGE_TYPE_ACK; //tipo ack
-		static String MESSAGE_TYPE_DATA; //tipo dati
-		
-		static String MESSAGE_BOOLEAN_TRUE; //simbolo invio boolean true
-		static String MESSAGE_BOOLEAN_FALSE;//simbolo invio boolean falso
-		
-		
-		JTransmissionMethod *mmJTM; //contiene il metodo di trasmissione da usare
-		
-		HashMap<long, String> *sendMessageBuffer; //buffer per i messaggi da inviare
-		HashMap<long, long> *sendMessageTimer; //buffer per i timer per i mex da inviare
-		
-		HashMap<long, JData *> *sendMessageBufferJData; //buffer contenente il messaggi das inviare nel formato JData
-		
-		HashMap<long, String> *sendAckBuffer; //buffer degli ack da inviare
-		
-		HashMap<long, long> *idMessageReceived; //buffer contiene gli id dei messaggi già ricevuti
-		
-		int stopPolling; //booloean che indica se stoppare il polling
 
-		void (*onReceive) (JData *); //puntatore a funzione OnReceive
-		void (*onReceiveAck) (JData *); //puntatore a funzione OnReceiveAck
+	private:		
+
+		//funzione che elabora i messaggi ricevuti
+		void execute(char *message); //funzione che gestisce il protocollo
 		
-		long (*getTimestamp) (); //puntatore a funzione per ottenere il timestamp in long
+
+		//ritorna il messaggio in JData
+		JData *getMessageJData(String messageString); //preleva i dati dal messaggio e crea il messaggio nel formato JData
 		
-		void getMessagePollingFunction(); //funzione che sostituisce il thread per il get dei messaggi
-		void sendMessagePollingFunction(); //" " " per inviare i messaggi
+
+		//gestione ACK
+		void sendAck(long id); //invia l'ack di conferma
+		void checkAck(long id); //controlla l'ack
 		
-		void execute(String message); //funzione che gestisce il protocollo
+
+		//timer
+		long _timerSendMessage; //tempo (ms) da attendere prima di reinviare i messaggi non confermati
+		long _timerPolling; //tempo (ms) da attendere tra un polling e un altro del mezzo di strasmissione
+
+		//tempi
+		long _timeLastPolling;
+		long _timeLastSend;
 		
-		int checkMessageAlreadyReceived(JData * message); //verifica se il messaggio è già stato ricevuto
+
+		//mezzo di trasmissione
+		JTransmissionMethod *_mmJTM; //contiene il metodo di trasmissione da usare
 		
-		int validate(String message); //verifica se il messaggio è conforme al protocollo
+
+		//contenitori dei dati
+		HashMap<long, char *> *_messageBuffer; //buffer per i messaggi da inviare
+
 		
-		JData *getJDataMessage(String message); //preleva i dati dal messaggio e crea il messaggio nel formato JData
-		
-		void sendAck(JData *message); //invia l'ack di conferma
-		
-		void checkAck(JData *message); //controlla l'ack
+		//indica se il polling è fermo o meno
+		uint8_t _pollingEnabled; //indica se il polling è fermo (non si ricevono messaggi)
+
+		//puntatori a funzioni esterne
+		void (*_onReceive) (JData *); //puntatore a funzione OnReceive
+		long (*_getTimestamp) (); //puntatore a funzione per ottenere il timestamp in long
 		
 };
 
