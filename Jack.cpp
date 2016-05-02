@@ -24,7 +24,7 @@
 
 //---PUBLIC---
 
-Jack::Jack(JTrasmissionMethod * mmJTM, void (* onReceive) (JData *), long (* getTimestamp) (), long timerSendMessage, long timerPolling) { //tempo per il reinvio
+Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (*getTimestamp) (), long timerSendMessage, long timerPolling) { //tempo per il reinvio
 	
 	//salvo il mezzo di trasmissione
 	_mmJTM = mmJTM;
@@ -48,7 +48,7 @@ Jack::Jack(JTrasmissionMethod * mmJTM, void (* onReceive) (JData *), long (* get
 }
 
 //costruttore ridotto
-Jack::Jack(JTrasmissionMethod * mmJTM, void (* onReceive) (JData *), long (* getTimestamp) ()): Jack(mmJTM, onReceive, getTimestamp) {} //costruttore con mmJTM, funzione onReceive e getTimestamp
+Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (*getTimestamp) ()): Jack(mmJTM, onReceive, getTimestamp) {} //costruttore con mmJTM, funzione onReceive e getTimestamp
 
 
 //distruttore
@@ -86,8 +86,11 @@ void Jack::loop() { //luppa per simulare il thread
 
 	if (_pollingEnabled && millis() - _timeLastPolling >= _timerPolling) {
 
+		//prelevo la lunghezza del messaggio
+		int length = _mmJTM->available();
+
 		//verifico se ci sono messaggi disponibili e ne salvo la lunghezza
-		if (_pollingEnabled && int length = _mmJTM->available()) {
+		if (_pollingEnabled && length) {
 
 			//creo il buffer che conterrà il messaggio ricevuto da mmJTM
 			char message[length];
@@ -102,7 +105,7 @@ void Jack::loop() { //luppa per simulare il thread
 		}
 	
 		//se ci sono messaggi da inviare ed è passato il tempo di pausa tra un invio e l'altro
-		if (millis() - _timeLastSend >= _timerSendMessage && sendMessageBuffer->moveToFirst()) { //invio messaggi
+		if (millis() - _timeLastSend >= _timerSendMessage && _messageBuffer->moveToFirst()) { //invio messaggi
 			
 			//scorro tutti i messaggi e li invio
 			do {
@@ -113,7 +116,7 @@ void Jack::loop() { //luppa per simulare il thread
 				//invio il messaggio
 				_mmJTM->send(message, strlen(message));
 			
-			} while (sendMessageBuffer->moveToNext());
+			} while (_messageBuffer->moveToNext());
 		
 		}
 	}
@@ -130,28 +133,28 @@ void Jack::execute(char *messageJSON) { //funzione che gestisce il protocollo
 	StaticJsonBuffer<500> jsonBuffer;
 
 	//creo la root a partire dal messaggio JSON
-	JsonObject *root = &_jsonBuffer.parseObject(messageJSON);
+	JsonObject *root = &jsonBuffer.parseObject(messageJSON);
 
 	//verifo se il messaggio è un messaggio valido
 	if (root->success()) {
 
 		//ottengo il tipo del messaggio
-		char *type = root[JK_MESSAGE_TYPE];
+		const char *type = (*root)[JK_MESSAGE_TYPE];
 
 		//tipo dati
 		if (strcmp(type, JK_MESSAGE_TYPE_DATA)) {
 
 			//costruisco il messaggio JData
-			JData *message = new JData(root);
+			JData *message = new JData((*root));
 
 			//ottengo l'id del messaggio
-			long id = root[JK_MESSAGE_ID];
+			long id = (*root)[JK_MESSAGE_ID];
 
 			//confermo il messaggio
 			sendAck(id);
 
 			//chiamo la funzione di gestione definita dall'utenye
-			(* onReceive) (message);
+			(*_onReceive) (message);
 
 			//elimino JData
 			delete message;
@@ -160,24 +163,13 @@ void Jack::execute(char *messageJSON) { //funzione che gestisce il protocollo
 		} else if (strcmp(type, JK_MESSAGE_TYPE_ACK)) {
 
 			//ottengo l'id del messaggio
-			long id = root[JK_MESSAGE_ID];
-
-			//elimino il messaggio
-			delete root;
+			long id = (*root)[JK_MESSAGE_ID];
 
 			//chiamo la funzione di gestione degli ack
 			checkAck(id);
-
-		//messaggio sconosciuto
-		} else {
-			delete root;
 		}
 
-	//messaggio non valido
-	} else {
-		delete root;
 	}
-		
 }
 
 
@@ -192,7 +184,7 @@ void Jack::sendAck(long id) { //invia l'ack di conferma
 
 	//inserisco i dati
 	root[JK_MESSAGE_ID] = id; //id del messaggio da confermare
-	root[JK_MESSAGE_TYPE] = JK_MESSAGE_ACK; //il messaggio è un ACK
+	root[JK_MESSAGE_TYPE] = JK_MESSAGE_TYPE_ACK; //il messaggio è un ACK
 
 	//verifico la dimensione del messaggio più il carattere di terminazione
 	size_t length = root.measureLength() +1;
@@ -223,28 +215,28 @@ void Jack::checkAck(long id) { //controlla l'ack
 void Jack::send(JData *messageJData) { //invia il messaggio
 
 	//prelevo la root del messaggio
-	JsonObject root = messageJData->getRoot();
+	JsonObject *root = messageJData->getRoot();
 
 	//ottengo il timestamp da usare come id del messaggio
-	long id = (* getTimestamp) ();
+	long id = (*_getTimestamp) ();
 
 	//aggiungo id e la tipologia del messaggio
-	root[JK_MESSAGE_ID] = id; //id del messaggio da confermare
-	root[JK_MESSAGE_TYPE] = JK_MESSAGE_DATA; //il messaggio è un ACK
+	(*root)[JK_MESSAGE_ID] = id; //id del messaggio da confermare
+	(*root)[JK_MESSAGE_TYPE] = JK_MESSAGE_TYPE_DATA; //il messaggio è un ACK
 
 	//verifico la dimensione del messaggio più il carattere di terminazione
-	size_t length = root.measureLength() +1;
+	size_t length = (*root).measureLength() +1;
 
 	//creo buffer per contenere il messaggio
 	char message[length];
 
 	//ottengo il messaggio in JSON
-	root.printTo(message, length);
+	(*root).printTo(message, length);
 
 	//elimino il messaggio nel formato JData
 	delete messageJData;
 
 	//inserisco il messaggio nel buffer di invio
-	_messageBuffer->put(id, messageString);
+	_messageBuffer->put(id, message);
 	
 }

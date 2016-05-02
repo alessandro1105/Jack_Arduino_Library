@@ -39,8 +39,8 @@ class JData {
 
       //add function
       void add(const char *key, bool value);
-      void add(const char *key, float value, uint8_t decimals = 2);
-      void add(const char *key, double value, uint8_t decimals = 2);
+      void add(const char *key, float value);
+      void add(const char *key, double value);
       void add(const char *key, signed char value);
       void add(const char *key, signed long value);
       void add(const char *key, signed int value);
@@ -70,6 +70,9 @@ class JData {
 
       //json object
       JsonObject *_root;
+
+      //json nested object
+      JsonObject *_values;
 
    protected:
 

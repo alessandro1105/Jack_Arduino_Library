@@ -49,9 +49,7 @@ TIPOLOGIA MESSAGGI JACK
 
 #include <Arduino.h>
 #include <HashMap.h>
-//#include <Wrappers.h>
 #include "JData.h"
-//#include "JDataWrappers.h"
 #include "JTransmissionMethod.h"
 #include <ArduinoJson.h>
 
@@ -71,7 +69,8 @@ TIPOLOGIA MESSAGGI JACK
 //---DEBUG---
 #define DEBUG 1
 
-
+//indico l'esistenza di JData
+class JData;
 
 //---JACK---
 //classe Jack per il protocollo
@@ -80,8 +79,8 @@ class Jack {
 	public:
 	
 		//construttori
-		Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (* getTimestamp) ()); //costruttore con mmJTM e funzione onRceive e OnReceiveAck
-		Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (* getTimestamp) (), long timerResendMessage, long timerPolling); //tempo per il reinvio
+		Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (*getTimestamp) ()); //costruttore con mmJTM e funzione onRceive e OnReceiveAck
+		Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (*getTimestamp) (), long timerResendMessage, long timerPolling); //tempo per il reinvio
 		
 		//distruttore
 		~Jack(); //distruttore

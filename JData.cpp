@@ -25,7 +25,7 @@
 JData::JData() { //costruttore
 
    //costruisco la root
-   _root = &jsonBuffer.createObject();
+   _root = &_buffer.createObject();
 
    //indico che l'oggetto nested non è ancora stato creato
    _nestedObjectExists = 0;
@@ -36,7 +36,7 @@ JData::JData() { //costruttore
 JData::~JData() { //distruttore
 
    //elimino la root
-   delete _root;
+   //delete _root;
 }
 
 //---ADD FUNCTION---
@@ -46,26 +46,26 @@ void JData::add(const char *key, bool value) {
       createNestedObject();
    }
 
-   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+   (*_values)[key] = value;
 
 }
 
-void JData::add(const char *key, float value, uint8_t decimals = 2) {
+void JData::add(const char *key, float value) {
    //verifico se è stato costruito l'oggetto nested per memorizzare i dati
    if (!_nestedObjectExists) {
       createNestedObject();
    }
 
-   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+   (*_values)[key] = value;
 }
 
-void JData::add(const char *key, double value, uint8_t decimals = 2) {
+void JData::add(const char *key, double value) {
    //verifico se è stato costruito l'oggetto nested per memorizzare i dati
    if (!_nestedObjectExists) {
       createNestedObject();
    }
 
-   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+   (*_values)[key] = value;
 }
 
 void JData::add(const char *key, signed char value) {
@@ -74,7 +74,7 @@ void JData::add(const char *key, signed char value) {
       createNestedObject();
    }
 
-   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+   (*_values)[key] = value;
 }
 
 void JData::add(const char *key, signed long value) {
@@ -83,7 +83,7 @@ void JData::add(const char *key, signed long value) {
       createNestedObject();
    }
 
-   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+   (*_values)[key] = value;
 }
 
 void JData::add(const char *key, signed int value) {
@@ -92,7 +92,7 @@ void JData::add(const char *key, signed int value) {
       createNestedObject();
    }
 
-   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+   (*_values)[key] = value;
 }
 
 void JData::add(const char *key, signed short value) {
@@ -101,7 +101,7 @@ void JData::add(const char *key, signed short value) {
       createNestedObject();
    }
 
-   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+   (*_values)[key] = value;
 }
 
 void JData::add(const char *key, unsigned char value) {
@@ -110,7 +110,7 @@ void JData::add(const char *key, unsigned char value) {
       createNestedObject();
    }
 
-   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+   (*_values)[key] = value;
 }
 
 void JData::add(const char *key, unsigned long value) {
@@ -119,7 +119,7 @@ void JData::add(const char *key, unsigned long value) {
       createNestedObject();
    }
 
-   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+   (*_values)[key] = value;
 }
 
 void JData::add(const char *key, unsigned int value) {
@@ -128,7 +128,7 @@ void JData::add(const char *key, unsigned int value) {
       createNestedObject();
    }
 
-   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+   (*_values)[key] = value;
 }
 
 void JData::add(const char *key, unsigned short value) {
@@ -137,7 +137,7 @@ void JData::add(const char *key, unsigned short value) {
       createNestedObject();
    }
 
-   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+   (*_values)[key] = value;
 }
 
 void JData::add(const char *key, const char *value) {
@@ -146,7 +146,7 @@ void JData::add(const char *key, const char *value) {
       createNestedObject();
    }
 
-   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+   (*_values)[key] = value;
 }
 
 void JData::add(const char *key, const String &value) {
@@ -155,14 +155,14 @@ void JData::add(const char *key, const String &value) {
       createNestedObject();
    }
 
-   _root[JK_MESSAGE_TYPE_DATA][key] = value;
+   (*_values)[key] = value;
 }
 
 //---GET FUNCTION---
 JsonVariant JData::get(const char *key) {
 
    //ritorno il dato richiesto
-   return _root[JK_MESSAGE_TYPE_DATA][key];
+   return (*_values)[key];
 }
 
 
@@ -172,7 +172,7 @@ JsonVariant JData::get(const char *key) {
 void JData::createNestedObject() {
 
    //creo l'oggetto nested
-   _root.createNestedObject(JK_MESSAGE_TYPE_DATA);
+   _values = &_root->createNestedObject(JK_MESSAGE_TYPE_DATA);
 
    //indico che è stato creato
    _nestedObjectExists = 1;
@@ -185,7 +185,7 @@ void JData::createNestedObject() {
 JData::JData(JsonObject &root) { //costruttore
 
    //salvo la root
-   _root = root;
+   _root = &root;
 
    //indico che l'oggetto nested è stato creato
    _nestedObjectExists = 1;
