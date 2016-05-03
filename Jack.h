@@ -93,7 +93,7 @@ class Jack {
 		void flushBufferSend(); //cancella i buffer contenente i messaggi da inviare
 		
 		//invio messaggi
-		long send(JData * message); //invia il messaggio
+		long send(JData &message); //invia il messaggio
 		
 		//loop
 		void loop(); //luppa per simulare il thread ed esegue le funzioni di polling su mmJTM

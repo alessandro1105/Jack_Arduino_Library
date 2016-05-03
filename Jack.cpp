@@ -145,7 +145,7 @@ void Jack::execute(char *messageJSON) { //funzione che gestisce il protocollo
 		if (strcmp(type, JK_MESSAGE_TYPE_DATA)) {
 
 			//costruisco il messaggio JData
-			JData *message = new JData((*root));
+			JData *message = new JData(*root);
 
 			//ottengo l'id del messaggio
 			long id = (*root)[JK_MESSAGE_ID];
@@ -217,10 +217,10 @@ void Jack::checkAck(long id) { //controlla l'ack
 
 
 //metodo che invia il messaggio
-long Jack::send(JData *messageJData) { //invia il messaggio
+long Jack::send(JData &messageJData) { //invia il messaggio
 
 	//prelevo la root del messaggio
-	JsonObject *root = messageJData->getRoot();
+	JsonObject *root = messageJData.getRoot();
 
 	//ottengo il timestamp da usare come id del messaggio
 	long id = (*_getTimestamp)();
@@ -237,9 +237,6 @@ long Jack::send(JData *messageJData) { //invia il messaggio
 
 	//ottengo il messaggio in JSON
 	(*root).printTo(message, length);
-
-	//elimino il messaggio nel formato JData
-	delete messageJData;
 
 	//inserisco il messaggio nel buffer di invio
 	_messageBuffer->put(id, message);
