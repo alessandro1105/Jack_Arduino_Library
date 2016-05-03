@@ -1,4 +1,4 @@
-/*
+/*   
    Copyright 2016 Alessandro Pasqualini
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -79,8 +79,8 @@ class Jack {
 	public:
 	
 		//construttori
-		Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (*getTimestamp) ()); //costruttore con mmJTM e funzione onRceive e OnReceiveAck
-		Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (*getTimestamp) (), long timerResendMessage, long timerPolling); //tempo per il reinvio
+		Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData *), void (*onReceiveAck)(long id), long (*getTimestamp)()); //costruttore con mmJTM e funzione onRceive e OnReceiveAck
+		Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData *), void (*onReceiveAck)(long id), long (*getTimestamp)(), long timerResendMessage, long timerPolling); //tempo per il reinvio
 		
 		//distruttore
 		~Jack(); //distruttore
@@ -93,7 +93,7 @@ class Jack {
 		void flushBufferSend(); //cancella i buffer contenente i messaggi da inviare
 		
 		//invio messaggi
-		void send(JData * message); //invia il messaggio
+		long send(JData * message); //invia il messaggio
 		
 		//loop
 		void loop(); //luppa per simulare il thread ed esegue le funzioni di polling su mmJTM
@@ -126,8 +126,9 @@ class Jack {
 		uint8_t _pollingEnabled; //indica se il polling è fermo (non si ricevono messaggi)
 
 		//puntatori a funzioni esterne
-		void (*_onReceive) (JData *); //puntatore a funzione OnReceive
-		long (*_getTimestamp) (); //puntatore a funzione per ottenere il timestamp in long
+		void (*_onReceive)(JData *); //puntatore a funzione OnReceive
+		void (*_onReceiveAck)(long id); //puntatore a funzione OnReceive
+		long (*_getTimestamp)(); //puntatore a funzione per ottenere il timestamp in long
 		
 };
 

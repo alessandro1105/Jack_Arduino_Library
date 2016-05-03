@@ -24,7 +24,7 @@
 
 //---PUBLIC---
 
-Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (*getTimestamp) (), long timerSendMessage, long timerPolling) { //tempo per il reinvio
+Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData *), void (*onReceiveAck)(long id), long (*getTimestamp)(), long timerSendMessage, long timerPolling) { //tempo per il reinvio
 	
 	//salvo il mezzo di trasmissione
 	_mmJTM = mmJTM;
@@ -35,6 +35,7 @@ Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (*getTi
 
 	//salvo i puntatori a funzioni
 	_onReceive = onReceive;
+	_onReceiveAck = onReceiveAck;
 	_getTimestamp = getTimestamp;
 
 	//inizializzo le variabili
@@ -48,7 +49,7 @@ Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (*getTi
 }
 
 //costruttore ridotto
-Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive) (JData *), long (*getTimestamp) ()): Jack(mmJTM, onReceive, getTimestamp) {} //costruttore con mmJTM, funzione onReceive e getTimestamp
+Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData *), void (*onReceiveAck)(long id), long (*getTimestamp)()): Jack(mmJTM, onReceive, onReceiveAck, getTimestamp, JK_TIMER_RESEND_MESSAGE, JK_TIMER_POLLING) {} //costruttore con mmJTM, funzione onReceive e getTimestamp
 
 
 //distruttore
@@ -154,7 +155,7 @@ void Jack::execute(char *messageJSON) { //funzione che gestisce il protocollo
 			sendAck(id);
 
 			//chiamo la funzione di gestione definita dall'utenye
-			(*_onReceive) (message);
+			(*_onReceive)(message);
 
 			//elimino JData
 			delete message;
@@ -205,7 +206,12 @@ void Jack::checkAck(long id) { //controlla l'ack
 	
 	//se il buffer dei messaggi da inviare contiene il messaggio appena confermato lo elimino
 	if (_messageBuffer->containsKey(id)) {
+
+		//rimuovo il messaggio dal buffer di invio
 		_messageBuffer->remove(id);
+
+		//il messaggio è stato confermato, chiamo la funzione dell'utente
+		(*_onReceiveAck)(id);
 	}
 		
 }
@@ -218,7 +224,7 @@ void Jack::send(JData *messageJData) { //invia il messaggio
 	JsonObject *root = messageJData->getRoot();
 
 	//ottengo il timestamp da usare come id del messaggio
-	long id = (*_getTimestamp) ();
+	long id = (*_getTimestamp)();
 
 	//aggiungo id e la tipologia del messaggio
 	(*root)[JK_MESSAGE_ID] = id; //id del messaggio da confermare
@@ -238,5 +244,8 @@ void Jack::send(JData *messageJData) { //invia il messaggio
 
 	//inserisco il messaggio nel buffer di invio
 	_messageBuffer->put(id, message);
+
+	//ritorno l'id del messaggio inserito nel buffer
+	return id;
 	
 }
