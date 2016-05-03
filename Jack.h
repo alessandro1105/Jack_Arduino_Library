@@ -59,7 +59,7 @@ TIPOLOGIA MESSAGGI JACK
 //Jack
 #define JK_MESSAGE_TYPE "type" //key tipo messaggio
 #define JK_MESSAGE_TYPE_ACK "ack" //tipo ack
-#define JK_MESSAGE_TYPE_DATA "val" //tipo dati
+#define JK_MESSAGE_TYPE_DATA "data" //tipo dati
 		
 #define JK_MESSAGE_ID "id" //id messaggio
 
