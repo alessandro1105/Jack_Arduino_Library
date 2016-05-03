@@ -26,9 +26,9 @@ class JTransmissionMethod {
 
 	public:
 		
-		virtual int receive(char *buffer, int size); //deve restituire il messaggio da passare a Jack
+		virtual size_t receive(char *buffer, int size); //deve restituire il messaggio da passare a Jack
 		virtual void send(char *message, int length); //invia il messaggio
-		virtual int available(); //restituisce true se ci sono dati da ricevere nel buffer
+		virtual size_t available(); //restituisce true se ci sono dati da ricevere nel buffer
 
 };
 
