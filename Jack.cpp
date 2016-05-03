@@ -87,6 +87,9 @@ void Jack::loop() { //luppa per simulare il thread
 
 	if (_pollingEnabled && millis() - _timeLastPolling >= _timerPolling) {
 
+		//ultimo polling
+		_timeLastPolling = millis();
+
 		//prelevo la lunghezza del messaggio
 		int length = _mmJTM->available();
 
@@ -107,6 +110,9 @@ void Jack::loop() { //luppa per simulare il thread
 	
 		//se ci sono messaggi da inviare ed è passato il tempo di pausa tra un invio e l'altro
 		if (millis() - _timeLastSend >= _timerSendMessage && _messageBuffer->moveToFirst()) { //invio messaggi
+
+			//ultimo invio
+			_timeLastSend = millis();
 			
 			//scorro tutti i messaggi e li invio
 			do {
