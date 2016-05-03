@@ -136,7 +136,7 @@ void Jack::loop() { //luppa per simulare il thread
 void Jack::execute(char *json) { //funzione che gestisce il protocollo
 
 	//creo memory pool
-	StaticJsonBuffer<500> jsonBuffer;
+	StaticJsonBuffer<200> jsonBuffer;
 
 	//creo la root a partire dal messaggio JSON
 	JsonObject& root = jsonBuffer.parseObject(json);
@@ -180,7 +180,7 @@ void Jack::execute(char *json) { //funzione che gestisce il protocollo
 void Jack::sendAck(long id) { //invia l'ack di conferma
 	
 	//creo memory pool
-	StaticJsonBuffer<200> jsonBuffer;
+	StaticJsonBuffer<100> jsonBuffer;
 
 	//creo root del messaggio
 	JsonObject& root = jsonBuffer.createObject();

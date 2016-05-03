@@ -66,7 +66,7 @@ class JData {
       uint8_t _nestedObjectExists;
 
       //buffer Json
-      StaticJsonBuffer<500> _buffer;
+      StaticJsonBuffer<200> _buffer;
 
       //json object
       JsonObject *_root;
