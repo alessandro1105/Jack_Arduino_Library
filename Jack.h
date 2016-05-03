@@ -79,8 +79,8 @@ class Jack {
 	public:
 	
 		//construttori
-		Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData *), void (*onReceiveAck)(long id), long (*getTimestamp)()); //costruttore con mmJTM e funzione onRceive e OnReceiveAck
-		Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData *), void (*onReceiveAck)(long id), long (*getTimestamp)(), long timerResendMessage, long timerPolling); //tempo per il reinvio
+		Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData *), void (*onReceiveAck)(long), long (*getTimestamp)()); //costruttore con mmJTM e funzione onRceive e OnReceiveAck
+		Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData *), void (*onReceiveAck)(long), long (*getTimestamp)(), long timerResendMessage, long timerPolling); //tempo per il reinvio
 		
 		//distruttore
 		~Jack(); //distruttore
@@ -127,7 +127,7 @@ class Jack {
 
 		//puntatori a funzioni esterne
 		void (*_onReceive)(JData *); //puntatore a funzione OnReceive
-		void (*_onReceiveAck)(long id); //puntatore a funzione OnReceive
+		void (*_onReceiveAck)(long); //puntatore a funzione OnReceive
 		long (*_getTimestamp)(); //puntatore a funzione per ottenere il timestamp in long
 		
 };

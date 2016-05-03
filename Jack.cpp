@@ -24,7 +24,7 @@
 
 //---PUBLIC---
 
-Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData *), void (*onReceiveAck)(long id), long (*getTimestamp)(), long timerSendMessage, long timerPolling) { //tempo per il reinvio
+Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData *), void (*onReceiveAck)(long), long (*getTimestamp)(), long timerSendMessage, long timerPolling) { //tempo per il reinvio
 	
 	//salvo il mezzo di trasmissione
 	_mmJTM = mmJTM;
@@ -49,7 +49,7 @@ Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData *), void (*onRece
 }
 
 //costruttore ridotto
-Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData *), void (*onReceiveAck)(long id), long (*getTimestamp)()): Jack(mmJTM, onReceive, onReceiveAck, getTimestamp, JK_TIMER_RESEND_MESSAGE, JK_TIMER_POLLING) {} //costruttore con mmJTM, funzione onReceive e getTimestamp
+Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData *), void (*onReceiveAck)(long), long (*getTimestamp)()): Jack(mmJTM, onReceive, onReceiveAck, getTimestamp, JK_TIMER_RESEND_MESSAGE, JK_TIMER_POLLING) {} //costruttore con mmJTM, funzione onReceive e getTimestamp
 
 
 //distruttore
@@ -127,7 +127,6 @@ void Jack::loop() { //luppa per simulare il thread
 
 //---PRIVATE---
 
-//DA RIVEDERE
 void Jack::execute(char *messageJSON) { //funzione che gestisce il protocollo
 
 	//creo memory pool
@@ -217,8 +216,8 @@ void Jack::checkAck(long id) { //controlla l'ack
 }
 
 
-//DA RIVEDERE
-void Jack::send(JData *messageJData) { //invia il messaggio
+//metodo che invia il messaggio
+long Jack::send(JData *messageJData) { //invia il messaggio
 
 	//prelevo la root del messaggio
 	JsonObject *root = messageJData->getRoot();
