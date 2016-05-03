@@ -24,10 +24,10 @@
 
 //---PUBLIC---
 
-Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData &), void (*onReceiveAck)(long), long (*getTimestamp)(), long timerSendMessage, long timerPolling) { //tempo per il reinvio
+Jack::Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &), void (*onReceiveAck)(long), long (*getTimestamp)(), long timerSendMessage, long timerPolling) { //tempo per il reinvio
 	
 	//salvo il mezzo di trasmissione
-	_mmJTM = mmJTM;
+	_mmJTM = &mmJTM;
 
 	//imposto i valori dei timer
 	_timerSendMessage = timerSendMessage;
@@ -49,7 +49,7 @@ Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData &), void (*onRece
 }
 
 //costruttore ridotto
-Jack::Jack(JTransmissionMethod *mmJTM, void (*onReceive)(JData &), void (*onReceiveAck)(long), long (*getTimestamp)()): Jack(mmJTM, onReceive, onReceiveAck, getTimestamp, JK_TIMER_RESEND_MESSAGE, JK_TIMER_POLLING) {} //costruttore con mmJTM, funzione onReceive e getTimestamp
+Jack::Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &), void (*onReceiveAck)(long), long (*getTimestamp)()): Jack(mmJTM, onReceive, onReceiveAck, getTimestamp, JK_TIMER_RESEND_MESSAGE, JK_TIMER_POLLING) {} //costruttore con mmJTM, funzione onReceive e getTimestamp
 
 
 //distruttore
