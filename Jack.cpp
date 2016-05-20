@@ -24,7 +24,7 @@
 
 //---PUBLIC---
 
-Jack::Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &, long), void (*onReceiveAck)(long), long (*getTimestamp)(), long timerSendMessage, long timerPolling) { //tempo per il reinvio
+Jack::Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &, long), void (*onReceiveAck)(long), long (*getMessageID)(), long timerSendMessage, long timerPolling) { //tempo per il reinvio
 	
 	//salvo il mezzo di trasmissione
 	_mmJTM = &mmJTM;
@@ -36,7 +36,7 @@ Jack::Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &, long), void (*
 	//salvo i puntatori a funzioni
 	_onReceive = onReceive;
 	_onReceiveAck = onReceiveAck;
-	_getTimestamp = getTimestamp;
+	_getMessageID = getMessageID;
 
 	//inizializzo le variabili
 	_timeLastPolling = 0;
@@ -49,7 +49,7 @@ Jack::Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &, long), void (*
 }
 
 //costruttore ridotto
-Jack::Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &, long), void (*onReceiveAck)(long), long (*getTimestamp)()): Jack(mmJTM, onReceive, onReceiveAck, getTimestamp, JK_TIMER_RESEND_MESSAGE, JK_TIMER_POLLING) {} //costruttore con mmJTM, funzione onReceive e getTimestamp
+Jack::Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &, long), void (*onReceiveAck)(long), long (*getMessageID)()): Jack(mmJTM, onReceive, onReceiveAck, getMessageID, JK_TIMER_RESEND_MESSAGE, JK_TIMER_POLLING) {} //costruttore con mmJTM, funzione onReceive e getMessageID
 
 
 //distruttore
@@ -228,8 +228,8 @@ long Jack::send(JData &messageJData) { //invia il messaggio
 	//prelevo la root del messaggio
 	JsonObject *root = messageJData.getRoot();
 
-	//ottengo il timestamp da usare come id del messaggio
-	long id = (*_getTimestamp)();
+	//ottengo l'id del messaggio
+	long id = (*_getMessageID)();
 
 	//aggiungo id e la tipologia del messaggio
 	(*root)[JK_MESSAGE_ID] = id; //id del messaggio da confermare
