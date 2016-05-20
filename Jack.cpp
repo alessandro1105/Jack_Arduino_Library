@@ -24,7 +24,7 @@
 
 //---PUBLIC---
 
-Jack::Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &), void (*onReceiveAck)(long), long (*getTimestamp)(), long timerSendMessage, long timerPolling) { //tempo per il reinvio
+Jack::Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &, long), void (*onReceiveAck)(long), long (*getTimestamp)(), long timerSendMessage, long timerPolling) { //tempo per il reinvio
 	
 	//salvo il mezzo di trasmissione
 	_mmJTM = &mmJTM;
@@ -49,7 +49,7 @@ Jack::Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &), void (*onRece
 }
 
 //costruttore ridotto
-Jack::Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &), void (*onReceiveAck)(long), long (*getTimestamp)()): Jack(mmJTM, onReceive, onReceiveAck, getTimestamp, JK_TIMER_RESEND_MESSAGE, JK_TIMER_POLLING) {} //costruttore con mmJTM, funzione onReceive e getTimestamp
+Jack::Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &, long), void (*onReceiveAck)(long), long (*getTimestamp)()): Jack(mmJTM, onReceive, onReceiveAck, getTimestamp, JK_TIMER_RESEND_MESSAGE, JK_TIMER_POLLING) {} //costruttore con mmJTM, funzione onReceive e getTimestamp
 
 
 //distruttore
@@ -160,7 +160,7 @@ void Jack::execute(char *json) { //funzione che gestisce il protocollo
 			sendAck(id);
 
 			//chiamo la funzione di gestione definita dall'utenye
-			(*_onReceive)(message);
+			(*_onReceive)(message, id);
 
 		//tipo ACK
 		} else if (strcmp(type, JK_MESSAGE_TYPE_ACK) == 0) {
