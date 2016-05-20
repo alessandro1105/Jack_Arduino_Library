@@ -94,7 +94,7 @@ void Jack::loop() { //luppa per simulare il thread
 		int length = _mmJTM->available();
 
 		//verifico se ci sono messaggi disponibili e ne salvo la lunghezza
-		if (_pollingEnabled && length) {
+		if (length) {
 
 			//creo il buffer che conterrà il messaggio ricevuto da mmJTM
 			char message[length +1];
