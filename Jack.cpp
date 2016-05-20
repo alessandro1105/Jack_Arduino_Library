@@ -131,6 +131,37 @@ void Jack::loop() { //luppa per simulare il thread
 }
 
 
+//metodo che invia il messaggio
+long Jack::send(JData &messageJData) { //invia il messaggio
+
+	//prelevo la root del messaggio
+	JsonObject *root = messageJData.getRoot();
+
+	//ottengo l'id del messaggio
+	long id = (*_getMessageID)();
+
+	//aggiungo id e la tipologia del messaggio
+	(*root)[JK_MESSAGE_ID] = id; //id del messaggio da confermare
+	(*root)[JK_MESSAGE_TYPE] = JK_MESSAGE_TYPE_DATA; //il messaggio è un ACK
+
+	//verifico la dimensione del messaggio più il carattere di terminazione
+	size_t length = (*root).measureLength() +1;
+
+	//creo buffer per contenere il messaggio malloc
+	char *message = (char *) malloc(length * sizeof(char));
+
+	//ottengo il messaggio in JSON
+	(*root).printTo(message, length);
+
+	//inserisco il messaggio nel buffer di invio
+	_messageBuffer->put(id, message);
+
+	//ritorno l'id del messaggio inserito nel buffer
+	return id;
+	
+}
+
+
 //---PRIVATE---
 
 void Jack::execute(char *json) { //funzione che gestisce il protocollo
@@ -219,35 +250,4 @@ void Jack::checkAck(long id) { //controlla l'ack
 		(*_onReceiveAck)(id);
 	}
 		
-}
-
-
-//metodo che invia il messaggio
-long Jack::send(JData &messageJData) { //invia il messaggio
-
-	//prelevo la root del messaggio
-	JsonObject *root = messageJData.getRoot();
-
-	//ottengo l'id del messaggio
-	long id = (*_getMessageID)();
-
-	//aggiungo id e la tipologia del messaggio
-	(*root)[JK_MESSAGE_ID] = id; //id del messaggio da confermare
-	(*root)[JK_MESSAGE_TYPE] = JK_MESSAGE_TYPE_DATA; //il messaggio è un ACK
-
-	//verifico la dimensione del messaggio più il carattere di terminazione
-	size_t length = (*root).measureLength() +1;
-
-	//creo buffer per contenere il messaggio malloc
-	char *message = (char *) malloc(length * sizeof(char));
-
-	//ottengo il messaggio in JSON
-	(*root).printTo(message, length);
-
-	//inserisco il messaggio nel buffer di invio
-	_messageBuffer->put(id, message);
-
-	//ritorno l'id del messaggio inserito nel buffer
-	return id;
-	
 }
