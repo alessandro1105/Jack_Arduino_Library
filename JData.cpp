@@ -187,6 +187,9 @@ JData::JData(JsonObject &root) { //costruttore
    //salvo la root
    _root = &root;
 
+   //imposto l'oggetto nested
+   _values = (*_root)[JK_MESSAGE_TYPE_DATA];
+
    //indico che l'oggetto nested è stato creato
    _nestedObjectExists = 1;
 }
