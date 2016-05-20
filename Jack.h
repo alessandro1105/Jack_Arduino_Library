@@ -80,7 +80,7 @@ class Jack {
 	
 		//construttori
 		Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &, long), void (*onReceiveAck)(long), long (*getMessageID)()); //costruttore con mmJTM e funzione onRceive e OnReceiveAck
-		Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &, long), void (*onReceiveAck)(long), long (*getMessageID)(), long timerResendMessage, long timerPolling); //tempo per il reinvio
+		Jack(JTransmissionMethod &mmJTM, void (*onReceive)(JData &, long), void (*onReceiveAck)(long), long (*getMessageID)(), long timerSendMessage, long timerPolling); //tempo per il reinvio
 		
 		//distruttore
 		~Jack(); //distruttore
