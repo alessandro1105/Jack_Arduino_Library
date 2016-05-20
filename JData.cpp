@@ -172,7 +172,7 @@ JsonVariant JData::get(const char *key) {
 void JData::createNestedObject() {
 
    //creo l'oggetto nested
-   _values = &_root->createNestedObject(JK_MESSAGE_TYPE_DATA);
+   _values = &_root->createNestedObject(JK_MESSAGE_PAYLOAD);
 
    //indico che è stato creato
    _nestedObjectExists = 1;
@@ -188,7 +188,7 @@ JData::JData(JsonObject &root) { //costruttore
    _root = &root;
 
    //imposto l'oggetto nested
-   _values = &(*_root)[JK_MESSAGE_TYPE_DATA];
+   _values = &(*_root)[JK_MESSAGE_PAYLOAD];
 
    //indico che l'oggetto nested è stato creato
    _nestedObjectExists = 1;

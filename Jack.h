@@ -62,6 +62,7 @@ TIPOLOGIA MESSAGGI JACK
 #define JK_MESSAGE_TYPE_DATA "data" //tipo dati
 		
 #define JK_MESSAGE_ID "id" //id messaggio
+#define JK_MESSAGE_PAYLOAD "val"; //payload messaggio
 
 #define JK_TIMER_RESEND_MESSAGE 1000//tempo (ms) da attendere prima di reinviare i messaggi non confermati
 #define JK_TIMER_POLLING 100 //tempo (ms) da attendere tra un polling e un altro del mezzo di strasmissione
