@@ -188,7 +188,7 @@ JData::JData(JsonObject &root) { //costruttore
    _root = &root;
 
    //imposto l'oggetto nested
-   _values = &(*_root)[JK_MESSAGE_PAYLOAD];
+   _values = &_buffer.parseObject((*_root)[JK_MESSAGE_PAYLOAD].asString());
 
    //indico che l'oggetto nested è stato creato
    _nestedObjectExists = 1;
